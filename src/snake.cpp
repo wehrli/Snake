@@ -1,4 +1,8 @@
-#include "headers/snake.h"
+#include "headers/snake.hpp"
+
+#include <iostream>
+
+using namespace std;
 
 Snake::Snake(int gridSize) {
     body.push_back({gridSize / 2, gridSize / 2});
@@ -31,8 +35,27 @@ void Snake::shrink() {
     body.pop_back();
 }
 
+int Snake::size() {
+    return body.size();
+}
+
+bool Snake::isColiding() {
+    if (body.size() <= 1) return false;
+
+    SnakeSegment head = body[0];
+    for (uint i = 1; i < body.size(); ++i) {
+        if (head.x == body[i].x && head.y == body[i].y) return true;
+    }
+
+    return false;
+}
+
 SnakeSegment Snake::getHead() {
     return body[0];
+}
+
+std::vector<SnakeSegment> Snake::getBody() {
+    return body;
 }
 
 

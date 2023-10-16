@@ -14,8 +14,11 @@ public:
     void move(sf::Vector2f dir);
     void grow();
     void shrink();
+    int size();
+    bool isColiding();
     void draw(sf::RenderWindow& window, int gridSize);
     SnakeSegment getHead();
+    std::vector<SnakeSegment> getBody();
 private:
     std::vector<SnakeSegment> body;
 };

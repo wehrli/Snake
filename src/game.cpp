@@ -1,15 +1,4 @@
-#include <iostream>
-
-#include <SFML/Graphics.hpp>
-
-#include <ncurses.h>
-
-// #define KEY_UP 72
-// #define KEY_DOWN 80
-// #define KEY_LEFT 75
-// #define KEY_RIGHT 77
-
-#include "headers/game.h"
+#include "headers/game.hpp"
 
 using namespace std;
 
@@ -24,12 +13,23 @@ Game::Game(int gridSize, int sWidth, int sHeight) :
         mDirection = sf::Vector2f(1, 0);
         mBerryShape = mBerry.spawn(gridSize);
         mAckeeShape = mAckee.spawn(gridSize);
+        mStatus = PLAYING;
 }
 
 void Game::handleEvents() {
     if (mWindow.pollEvent(mEvent)) {
-         if (mEvent.type == sf::Event::Closed) {
+        if (mEvent.type == sf::Event::Closed) {
             mWindow.close();
+        }
+        else if (mEvent.type == sf::Event::KeyPressed && mEvent.key.code == sf::Keyboard::Escape) {
+            mWindow.close();
+        }
+        else if (mEvent.type == sf::Event::KeyPressed && mEvent.key.code == sf::Keyboard::R) {
+            mStatus = PLAYING;
+            mSnake = Snake(mGridSize);
+            mDirection = sf::Vector2f(1, 0);
+            mBerryShape = mBerry.spawn(mGridSize);
+            mAckeeShape = mAckee.spawn(mGridSize);
         }
         else if (mEvent.type == sf::Event::KeyPressed) {
             if (mEvent.key.code == sf::Keyboard::Left) mDirection = sf::Vector2f(-1, 0);
@@ -40,54 +40,57 @@ void Game::handleEvents() {
     }
 }
 
-sf::Text Game::gameOver() {
-    sf::Font font;
-    if (!font.loadFromFile("src/arial.ttf")) {
-        // handle font loading error
+void Game::display() {
+    mWindow.clear();
+    mScoreText.setString("Score: " + to_string(mSnake.size() - 1));
+
+    if (mStatus == GAME_OVER) {
+        mWindow.draw(mGameOverText);
+        mWindow.display();
+        return;
     }
 
-    sf::Text gameOverText;
-    gameOverText.setFont(font);
-    gameOverText.setString("Game Over");
-    gameOverText.setCharacterSize(50);
-    gameOverText.setStyle(sf::Text::Bold | sf::Text::Underlined);
-    gameOverText.setFillColor(sf::Color::Red);
-    gameOverText.setPosition(mScreenWidth / 2 - gameOverText.getGlobalBounds().width / 2, mScreenHeight / 2 - gameOverText.getGlobalBounds().height / 2);
+    mWindow.draw(mScoreText);
+    mWindow.draw(mBerryShape);
+    mWindow.draw(mAckeeShape);
+    mSnake.draw(mWindow, mGridSize);
 
-    return gameOverText;
-    // sf::Text restartText("Press R to restart", font, 30);
-    // restartText.setFillColor(sf::Color::White);
-    // restartText.setPosition(mScreenWidth / 2 - restartText.getGlobalBounds().width / 2, mScreenHeight / 2 + restartText.getGlobalBounds().height);
+    mWindow.display();
+}
 
+void Game::init() {
+    mGameOverText = sf::Text();
+    mScoreText = sf::Text();
+    if (!mFont.loadFromFile("src/arial.ttf")) {
+        std::cout << "Failed to load arial ttf" << std::endl;
 
+        return;
+    }
 
-        // if (sf::Keyboard::isKeyPressed(sf::Keyboard::R)) {
-        //     mSnake.reset();
-        //     mBerryShape = mBerry.spawn(mGridSize);
-        //     mAckeeShape = mAckee.spawn(mGridSize);
-        //     return;
-        // }
+    mGameOverText.setFont(mFont);
+    mGameOverText.setString("Game Over\nPress R to restart\nESC to quit");
+    mGameOverText.setCharacterSize(50);
+    mGameOverText.setStyle(sf::Text::Bold | sf::Text::Underlined);
+    mGameOverText.setFillColor(sf::Color::Red);
+    mGameOverText.setPosition(mScreenWidth / 2 - mGameOverText.getGlobalBounds().width / 2, mScreenHeight / 2 - mGameOverText.getGlobalBounds().height / 2);
+
+    mScoreText.setFont(mFont);
+    mScoreText.setString("Score: 0");
+    mScoreText.setCharacterSize(25);
+    mScoreText.setFillColor(sf::Color::White);
+    mScoreText.setPosition(0 + mScoreText.getGlobalBounds().width / 2, 0 + mScoreText.getGlobalBounds().height / 2);
 }
 
 void Game::run() {
     while (mWindow.isOpen()) {
         handleEvents();
 
-        if (mWindow.isOpen() && mClock.getElapsedTime().asMilliseconds() > 100) {
+        if (mStatus == PLAYING && mClock.getElapsedTime().asMilliseconds() > 100) {
             mClock.restart();
-
-            mSnake.move(mDirection);
 
 
             SnakeSegment head = mSnake.getHead();
 
-            if (head.x < 0 || head.x >= mScreenWidth / mGridSize || head.y < 0 || head.y >= mScreenHeight / mGridSize) {
-                std::cout << "Game Over" << std::endl;
-                mWindow.close();
-                break;
-            }
-
-            // Berry management
             Fruit::Position berryPos = mBerry.getPosition();
             Fruit::Position ackeePos = mAckee.getPosition();
             if (head.x == berryPos.x && head.y == berryPos.y) {
@@ -100,15 +103,18 @@ void Game::run() {
                 mAckeeShape = mAckee.spawn(mGridSize);
             }
 
-            // Clear the window
-            mWindow.clear();
+            mSnake.move(mDirection);
+            head = mSnake.getHead();
 
-            mWindow.draw(mBerryShape);
-            mWindow.draw(mAckeeShape);
-            mSnake.draw(mWindow, mGridSize);
+            if (head.x < 0 || head.x >= mScreenWidth / mGridSize
+                || head.y < 0 || head.y >= mScreenHeight / mGridSize
+                || mSnake.size() <= 0
+                || mSnake.isColiding()) {
+                
+                mStatus = GAME_OVER;
+            }
 
-            // Display everything
-            mWindow.display();
+            display();
         }
     }
 }

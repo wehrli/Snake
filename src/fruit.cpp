@@ -1,4 +1,4 @@
-#include "headers/fruit.h"
+#include "headers/fruit.hpp"
 
 Fruit::Fruit(Type type, int gridSize) {
     mType = type;

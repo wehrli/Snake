@@ -1,8 +1,9 @@
 #include <vector>
 #include <SFML/Graphics.hpp>
+#include <iostream>
 
-#include "snake.h"
-#include "fruit.h"
+#include "snake.hpp"
+#include "fruit.hpp"
 
 struct berryPosition {
     int x, y;
@@ -11,22 +12,28 @@ struct berryPosition {
 class Game {
 public:
     Game(int gridSize, int sWidth, int sHeight);
-    sf::Text gameOver();
     void run();
+    void init();
 private:
     int mGridSize;
     int mScreenWidth;
     int mScreenHeight;
+    Snake mSnake;
+    sf::RenderWindow mWindow;
     Fruit mBerry;
     Fruit mAckee;
+    enum Status { PLAYING, GAME_OVER };
+    Status mStatus;
     sf::RectangleShape mBerryShape;
     sf::RectangleShape mAckeeShape;
-    sf::RenderWindow mWindow;
+    sf::Font mFont;
+    sf::Text mGameOverText;
+    sf::Text mScoreText;
     sf::Clock mClock;
-    Snake mSnake;
     sf::Vector2f mDirection;
     sf::Event mEvent;
     void handleEvents();
+    void display();
 };
 
 
